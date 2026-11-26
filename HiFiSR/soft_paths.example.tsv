@@ -1,0 +1,8 @@
+python	/absolute/path/to/python
+minimap2	/absolute/path/to/minimap2
+samtools	/absolute/path/to/samtools
+seqkit	/absolute/path/to/seqkit
+blastn	/absolute/path/to/blastn
+bcftools	/absolute/path/to/bcftools
+bamtools	/absolute/path/to/bamtools
+

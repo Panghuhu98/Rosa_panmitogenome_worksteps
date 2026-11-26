@@ -1,0 +1,19 @@
+Identify operational NUMHs and NUPHs
+
+Run the example commands from the top-level project directory. Adapt input paths to your files. Use BLAST+, BEDTools and SAMtools as required, or activate the environment defined in environment.yml.
+
+1. Build a BLAST database for one phased nuclear haplotype. Search it separately with the corresponding mitogenome and plastome. Repeat for each accession and haplotype.
+
+    makeblastdb -in A13_1.fa -dbtype nucl -out A13_1_db
+    blastn -query mt/A13.fasta -db A13_1_db -evalue 1e-4 -word_size 11 -outfmt 6 -out mt_hits.tsv
+    blastn -query pt/A13.fasta -db A13_1_db -evalue 1e-4 -word_size 11 -outfmt 6 -out pt_hits.tsv
+
+2. Retain alignments of at least 100 bp. Convert the nuclear coordinates to BED and merge intervals separated by at most 100 bp. The fourth column of the merged BED is the arithmetic mean identity of the contributing alignments.
+
+    for source in mt pt; do
+      awk 'BEGIN{OFS="\t"} $4>=100 {
+        start=($9<$10?$9:$10)-1; end=($9<$10?$10:$9)
+        print $2,start,end,$3,$1
+      }' "${source}_hits.tsv" | sort -k1,1 -k2,2n |
+        bedtools merge -i - -d 100 -c 4,5 -o mean,collapse > "${source}.bed"
+    done

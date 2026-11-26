@@ -1,0 +1,31 @@
+Extract organellar HiFi reads and detect structural signals
+
+Run the example commands from the top-level project directory in a Linux Bash shell. Adapt input paths to your files.
+
+Set up the environment before running the workflows.
+    conda env create -f environment.yml
+    conda activate rosa-panmitogenome
+
+1. Check out the original HiFiSR v0.5.0 Python/BLASTN release.
+    git clone https://github.com/zouyinstein/hifisr.git
+    git -C hifisr checkout 7a9f8eb6c6cd3fb2843bf8c094c8447a051d36c3
+    python -m pip install --no-deps hifisr==0.5.0
+    python -c 'import hifisr_functions.base'
+
+2. Set hifisr to the absolute path to hifisr/analysis_scripts. Copy HiFiSR/soft_paths.example.tsv to soft_paths.tsv. Replace the placeholders with absolute executable paths from the active environment (e.g., command -v minimap2) and set soft_paths to the resulting file. Define sample, mt_ref, pt_ref, hifi_reads and variant_ref for one accession. Give the references and FASTQ as absolute paths.
+
+3. Extract the organellar reads.
+    python "$hifisr/get_mtpt_reads.py" "$soft_paths" "$sample" "$mt_ref" "$pt_ref" "$hifi_reads" 32
+    reads_dir="$sample/reads"
+4. Filter reads at 10 kb and retain up to 4,000,000 of the eligible mitochondrial reads.
+    python "$hifisr/filt_read_ids.py" "$soft_paths" "$sample" \
+      "$reads_dir/mito_id_length_qual.txt" "$reads_dir/plastid_id_length_qual.txt" 10000 0
+    filtered="$reads_dir/filt_reads/filt_L10K_mito_id_length_qual.txt"
+    n=$(wc -l < "$filtered")
+    if (( n > 4000000 )); then n=4000000; fi
+    python "$hifisr/sample_reads.py" "$soft_paths" "$sample" mito "$filtered" "$n"
+5. Detect variants with the early Python/BLASTN implementation.
+    python "$hifisr/get_variants_in_reads.py" "$soft_paths" "$sample" mito run_1 \
+      "$variant_ref" "$reads_dir/sample_reads/sample_${n}_mito.fastq" 32
+
+6. For Figure 1G, inspect Type-2 signals with mid_olp_1 > 500 bp. Use subgroup_count as the supporting-read count.

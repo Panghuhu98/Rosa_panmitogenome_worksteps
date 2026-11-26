@@ -1,0 +1,14 @@
+Partition strict and shared homologs
+
+Run the example commands from the top-level project directory. Adapt input paths to your files. Use BLAST+, BEDTools and SAMtools as required, or activate the environment defined in environment.yml.
+
+1. Split nuclear intervals into strict NUMHs, strict NUPHs, and shared nuclear–mitochondrial–plastid homologs. The three sets are mutually exclusive at the base level.
+
+    bedtools subtract -a mt.bed -b pt.bed > strict_NUMH.bed
+    bedtools subtract -a pt.bed -b mt.bed > strict_NUPH.bed
+    bedtools intersect -a mt.bed -b pt.bed |
+      bedtools sort -i - | bedtools merge -i - > shared.bed
+
+2. Count intervals and sum their lengths. Sum across haplotypes for accession totals and divide by accession ploidy for haploid-equivalent values.
+
+    awk '{n++; bp+=$3-$2} END{print n+0, bp+0}' strict_NUMH.bed

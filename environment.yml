@@ -1,0 +1,27 @@
+name: rosa-panmitogenome
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  # Linux/Bash command-line tools
+  - blast
+  - bedtools=2.31.1
+  - samtools
+  # HiFiSR v0.5.0
+  - git
+  - python=3.10
+  - pip
+  - minimap2
+  - seqkit
+  - bcftools
+  - bamtools
+  - biopython
+  - pysam
+  - pandas
+  - numpy
+  - openpyxl
+  - xlsxwriter
+  - matplotlib-base
+  - polars
+  - fastexcel

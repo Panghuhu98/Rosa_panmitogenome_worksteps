@@ -1,0 +1,25 @@
+Identify ancestral NUMH candidates in A13
+
+Run the example commands from the top-level project directory. Adapt input paths to your files. Use BLAST+, BEDTools and SAMtools as required, or activate the environment defined in environment.yml.
+
+1. Align the A21 mitogenome to the extant A13 mitogenome. Merge matching intervals in A21 query coordinates. Subtract them from A21 and extract the remaining intervals of at least 100 bp. Repeat with A25.
+
+    blastn -task megablast -query mt/A21.fasta -subject mt/A13.fasta \
+      -evalue 1e-4 -outfmt '6 qseqid qstart qend' > A21_vs_A13.tsv
+    awk 'BEGIN{OFS="\t"} {print $1,($2<$3?$2:$3)-1,($2<$3?$3:$2)}' A21_vs_A13.tsv |
+      sort -k1,1 -k2,2n | bedtools merge -i - > A21_matched.bed
+    samtools faidx mt/A21.fasta
+    awk 'BEGIN{OFS="\t"} {print $1,0,$2}' mt/A21.fasta.fai > A21_genome.bed
+    bedtools subtract -a A21_genome.bed -b A21_matched.bed |
+      awk '$3-$2>=100' > A21_donor_specific.bed
+    bedtools getfasta -fi mt/A21.fasta -bed A21_donor_specific.bed -name -fo A21_donor_specific.fasta
+
+2. Align the donor fragments to each of the four A13 nuclear haplotypes. Apply the same ≥100-bp alignment filter and nuclear interval merge shown in step 2 of NUMH_NUPH/Identify_NUMH_NUPH.worksteps, to obtain A21_to_A13_1.bed and the corresponding BED for each other haplotype.
+
+    blastn -query A21_donor_specific.fasta -subject A13_1.fa \
+      -evalue 1e-4 -word_size 11 -outfmt 6 > A21_to_A13_1.tsv
+
+3. Keep donor-derived intervals with no overlap with the chosen A13 self-derived NUMH BED for the same haplotype. Use the strict self-derived NUMH intervals from NUMH_NUPH/Partition_Strict_and_Shared_Homologs.worksteps, or use the operational intervals when performing the operational-set comparison. In either case, record which self-derived set was used. Intersect the retained intervals with exon coordinates for gene-context analysis.
+
+    bedtools intersect -nonamecheck -v -a A21_to_A13_1.bed -b A13_self_NUMH_1.bed > A21_ancestral_A13_1.bed
+    bedtools intersect -nonamecheck -wa -wb -a A21_ancestral_A13_1.bed -b A13_1_exons.bed > A21_exon_overlaps.tsv
